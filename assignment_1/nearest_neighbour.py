@@ -125,11 +125,11 @@ def run_test():
     test3 = data['test3']
 
     error_array = []
+    m_array = [10,25,55,80,95]
     for i in range(5):
-        rnd_num = np.random.randint(1, 100)
         error = 0
         for j in range(10):
-            x_train, y_train = gensmallm([train0, train1, train2, train3], [2,3,5,6], rnd_num)
+            x_train, y_train = gensmallm([train0, train1, train2, train3], [2,3,5,6], m_array[i])
             x_test, y_test = gensmallm([test0, test1, test2, test3], [2,3,5,6], 50)
             classifer = learnknn(5, x_train, y_train)
             preds = predictknn(classifer, x_test)
@@ -139,10 +139,26 @@ def run_test():
         error_array.append(error/10)    
     
     #plot
-    fig = plt.figure()
-    ax = plt.axes()
-    x = np.linspace(0,10,100)
-    ax.plot(x,error_array)
+    #add axes 0-1 and 0-100
+    
+    plt.figure()
+    plt.title('Error rate as a function of m')
+    plt.xlim(0, 100)
+    plt.ylim(0, 1)
+    
+    plt.scatter(m_array, error_array)
+    plt.xlabel('m')
+    plt.ylabel('error rate')
+
+    #plot max line
+    max_error = max(error_array)+0.01
+    plt.plot([0,100],[max_error,max_error], color='red',linestyle='dashed') 
+
+    min_error = min(error_array)-0.01
+    plt.plot([0,100],[min_error,min_error], color='green',linestyle='dashed')
+
+    plt.show()
+
 
 if __name__ == '__main__':
 
