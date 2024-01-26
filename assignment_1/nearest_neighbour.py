@@ -1,5 +1,7 @@
 import numpy as np
 from scipy.spatial import distance
+import matplotlib.pyplot as plt
+
 
 
 def gensmallm(x_list: list, y_list: list, m: int):
@@ -35,7 +37,9 @@ def learnknn(k: int, x_train: np.array, y_train: np.array):
     :param y_train: numpy array of size (m, 1) containing the labels of the training sample
     :return: classifier data structure
     """
-    map = {x_train[i]: y_train[i] for i in range(len(x_train))}
+    map = {}
+    for i in range(len(x_train)):
+        map[tuple(x_train[i])] = y_train[i]
     return [map, k]
 
 def predictknn(classifier, x_test: np.array):
@@ -45,16 +49,34 @@ def predictknn(classifier, x_test: np.array):
     :param x_test: numpy array of size (n, d) containing test examples that will be classified
     :return: numpy array of size (n, 1) classifying the examples in x_test
     """
+
+    ans= np.array([predict_helper(classifier, x_test[i]) for i in range(len(x_test))])
+    #reshape to (n,1)
+    return ans.reshape(-1,1)
+   
+        
+def predict_helper(classifier, x_test: np.array):
     learning = classifier[0]
     k = classifier[1]
-    nearest_k = []
+    map_X_to_distance = {}
+    map_Label_to_count = {}
+    
+    for x in learning:
+        map_X_to_distance[x] = distance.euclidean(x, x_test)
+        if learning[x] in map_Label_to_count:
+            map_Label_to_count[learning[x]] += 1
+        else:
+            map_Label_to_count[learning[x]] = 1
 
-    for key in learning:
-        distance = np.linalg.norm(x_test - key)
-        nearest_k.append((distance, learning[key]))
-        if len(nearest_k) > k:
-            if distance < max(nearest_k)[0]:
-                nearest_k.remove(max(nearest_k))
+        if len(map_X_to_distance) > k:
+            sorted_map = sorted(map_X_to_distance.items(), key=lambda x: x[1])
+            key = sorted_map[-1][0]
+            del map_X_to_distance[key]
+            map_Label_to_count[learning[key]] -= 1
+
+    sorted_map = sorted(map_Label_to_count.items(), key=lambda x: x[1])
+    #return as array 
+    return np.array(sorted_map[-1][0])
 
 def simple_test():
     data = np.load('mnist_all.npz')
@@ -89,9 +111,42 @@ def simple_test():
     print(f"The {i}'th test sample was classified as {preds[i]}")
 
 
+def run_test():
+    data = np.load('mnist_all.npz')
+
+    train0 = data['train0']
+    train1 = data['train1']
+    train2 = data['train2']
+    train3 = data['train3']
+
+    test0 = data['test0']
+    test1 = data['test1']
+    test2 = data['test2']
+    test3 = data['test3']
+
+    error_array = []
+    for i in range(5):
+        rnd_num = np.random.randint(1, 100)
+        error = 0
+        for j in range(10):
+            x_train, y_train = gensmallm([train0, train1, train2, train3], [2,3,5,6], rnd_num)
+            x_test, y_test = gensmallm([test0, test1, test2, test3], [2,3,5,6], 50)
+            classifer = learnknn(5, x_train, y_train)
+            preds = predictknn(classifer, x_test)
+            error += np.mean(np.vstack(y_test)!= np.vstack(preds))
+    
+        print(f"The average error rate over 10 trials is {error/10}")
+        error_array.append(error/10)    
+    
+    #plot
+    fig = plt.figure()
+    ax = plt.axes()
+    x = np.linspace(0,10,100)
+    ax.plot(x,error_array)
+
 if __name__ == '__main__':
 
     # before submitting, make sure that the function simple_test runs without errors
-    simple_test()
+    run_test()
 
 
