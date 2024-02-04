@@ -126,17 +126,30 @@ def run_test():
 
     error_array = []
     m_array = [10,25,55,80,95]
+    x_test, y_test = gensmallm([test0, test1, test2, test3], [2,3,5,6], 50)
+    bars_max = []
+    bars_min = []
     for i in range(5):
-        error = 0
+        sum_err = 0
+        max_error = 0
+        min_error = 1
         for j in range(10):
             x_train, y_train = gensmallm([train0, train1, train2, train3], [2,3,5,6], m_array[i])
-            x_test, y_test = gensmallm([test0, test1, test2, test3], [2,3,5,6], 50)
-            classifer = learnknn(5, x_train, y_train)
+            classifer = learnknn(1, x_train, y_train)
             preds = predictknn(classifer, x_test)
-            error += np.mean(np.vstack(y_test)!= np.vstack(preds))
+            print("the error rate is", np.mean(np.vstack(y_test)!= np.vstack(preds)))
+            err= np.mean(np.vstack(y_test)!= np.vstack(preds))
+            if err > max_error:
+                max_error = err
+            if err < min_error:
+                min_error = err
+            sum_err += err
+        
     
-        print(f"The average error rate over 10 trials is {error/10}")
-        error_array.append(error/10)    
+        print(f"The average error rate over 10 trials is {sum_err/10}")
+        error_array.append(sum_err/10)    
+        bars_max.append(max_error-sum_err/10)
+        bars_min.append(sum_err/10-min_error)
     
     #plot
     #add axes 0-1 and 0-100
@@ -151,18 +164,80 @@ def run_test():
     plt.ylabel('error rate')
 
     #plot max line
-    max_error = max(error_array)+0.01
-    plt.plot([0,100],[max_error,max_error], color='red',linestyle='dashed') 
+    # max_error = max(error_array)+0.01
+    # plt.plot([0,100],[max_error,max_error], color='red',linestyle='dashed') 
 
-    min_error = min(error_array)-0.01
-    plt.plot([0,100],[min_error,min_error], color='green',linestyle='dashed')
+    # min_error = min(error_array)-0.01
+    # plt.plot([0,100],[min_error,min_error], color='green',linestyle='dashed')
+    
+    #print bars
+    plt.bar(m_array, error_array, yerr=[bars_min, bars_max], capsize=7)
+
+        
+        
+    plt.show()
+
+
+def run_test2():
+    data = np.load('mnist_all.npz')
+
+    train0 = data['train0']
+    train1 = data['train1']
+    train2 = data['train2']
+    train3 = data['train3']
+
+    test0 = data['test0']
+    test1 = data['test1']
+    test2 = data['test2']
+    test3 = data['test3']
+
+    # test with sample size 200 and k=1 to 11, 10 times for each k
+    error_array = []
+    k_array = [1,2,3,4,5,6,7,8,9,10,11]
+    x_test, y_test = gensmallm([test0, test1, test2, test3], [2,3,5,6], 50)
+    bars_max = []
+    bars_min = []
+    for i in range(11):
+        sum_err = 0
+        max_error = 0
+        min_error = 1
+        for j in range(10):
+            x_train, y_train = gensmallm([train0, train1, train2, train3], [2,3,5,6], 200)
+            classifer = learnknn(k_array[i], x_train, y_train)
+            preds = predictknn(classifer, x_test)
+            print("the error rate is", np.mean(np.vstack(y_test)!= np.vstack(preds)))
+            err= np.mean(np.vstack(y_test)!= np.vstack(preds))
+            if err > max_error:
+                max_error = err
+            if err < min_error:
+                min_error = err
+            sum_err += err
+        
+    
+        print(f"The average error rate over 10 trials is {sum_err/10}")
+        error_array.append(sum_err/10)    
+        bars_max.append(max_error-sum_err/10)
+        bars_min.append(sum_err/10-min_error)
+
+    #plot
+    #add axes 0-1 and 0-100
+        
+    plt.figure()
+    plt.title('Error rate as a function of k')
+    plt.xlim(0, 12)
+    plt.ylim(0, 1)
+
+    plt.scatter(k_array, error_array)
+    plt.xlabel('k')
+    plt.ylabel('error rate')
 
     plt.show()
+
 
 
 if __name__ == '__main__':
 
     # before submitting, make sure that the function simple_test runs without errors
-    run_test()
+    run_test2()
 
 
